@@ -1,6 +1,6 @@
 {
   "name": "ts-play-core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "repository": "https://github.com/externalhost0/play.core.ts",
   "author": "ertdfgcvb",
   "license": "Apache-2.0",
@@ -28,7 +28,7 @@
     },
     "./programs/*": {
       "types": "./dist/programs/*.d.ts",
-      "import": "./dist/programs/*.js" 
+      "import": "./dist/programs/*.js"
     }
   },
   "files": [
