@@ -1,4 +1,4 @@
-# play.core.ts
+# ts-play-core
 
 Core files, example and demos of the live-code ASCII playground:  
 [play.ertdfgcvb.xyz](https://play.ertdfgcvb.xyz)

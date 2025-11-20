@@ -1,26 +1,32 @@
 {
-  "name": "play.core.ts",
-  "version": "1.0.0",
+  "name": "ts-play-core",
+  "version": "1.0.1",
   "repository": "https://github.com/externalhost0/play.core.ts",
-  "author": "externalhost",
+  "author": "ertdfgcvb",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "rollup": "^2.47.0",
-    "terser": "^5.7.0",
     "typescript": "^5.9.3"
   },
   "scripts": {
     "buildEXT": "$(npm bin)/rollup -i src/run.js --format es --name play | $(npm bin)/terser --compress --mangle --toplevel --timings --ecma 2015 > run.min.js",
     "clean": "rm -rf dist",
-    "build": "npm run clean && npx tsc && npx rollup -i dist/run.js --format es --name play | npx terser --compress --mangle --toplevel --timings --ecma 2015 > dist/run.min.js",
-    "build:types": "npx tsc",
-    "build:bundle": "npx rollup -i dist/run.js --format es --name play | npx terser --compress --mangle --toplevel --timings --ecma 2015 > dist/run.min.js",
+    "build": "npm run clean && npx tsc",
     "test": "echo \"Error: no test has been made\" && exit 1"
   },
   "type": "module",
   "main": "dist/run.js",
   "types": "dist/run.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/run.d.ts",
+      "import": "./dist/run.js"
+    },
+    "./modules/*": {
+      "types": "./dist/modules/*.d.ts",
+      "import": "./dist/modules/*.js"
+    }
+  },
   "files": [
     "dist/",
     "README.md"

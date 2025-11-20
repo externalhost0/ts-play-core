@@ -5,113 +5,56 @@ Runner - TypeScript Version
 // Both available renderers are imported
 import textRenderer from './core/textrenderer'
 import canvasRenderer from './core/canvasrenderer'
-import FPS from './core/fps'
 import storage from './core/storage'
+
+import FPS from './core/fps'
 import RUNNER_VERSION from './core/version'
+export { RUNNER_VERSION };
 
-export { RUNNER_VERSION }
+// import types for internal use
+import type { Context, Cursor, Settings, Cell, Metrics } from './types';
+// re-export types for users
+export type {
+    MainFunction,
+    PreFunction,
+    PostFunction,
+    Coord,
+    Context,
+    Cursor,
+    Buffer,
+    Cell,
+    Settings,
+    Metrics
+} from './types';
 
-export interface Cell {
-	char?: string | number;
-	color?: string;
-	backgroundColor?: string;
-	fontWeight?: string | number;
-}
-
-export interface Metrics {
-	aspect: number;
-	cellWidth: number;
-	lineHeight: number;
-	fontFamily: string;
-	fontSize: number;
-	_update: () => void;
-}
-
-export interface CanvasSize {
-	width: number;
-	height: number;
-}
-
-export interface CanvasOffset {
-	x: number | 'auto';
-	y: number | 'auto';
-}
-
-export interface Settings {
-	element: HTMLElement | HTMLCanvasElement | null;
-	cols: number;
-	rows: number;
-	once: boolean;
-	fps: number;
-	rendererType: 'canvas' | 'text';
-	allowSelect: boolean;
-	restoreState: boolean;
-	backgroundColor?: string;
-	color?: string;
-	fontFamily?: string;
-	fontSize?: string;
-	fontWeight?: string | number;
-	letterSpacing?: string;
-	lineHeight?: string;
-	textAlign?: string;
-	canvasSize?: CanvasSize;
-	canvasOffset?: CanvasOffset;
-	[key: string]: any;
-}
-
-export interface Context {
-	frame: number;
-	time: number;
-	cols: number;
-	rows: number;
-	metrics: Metrics;
-	width: number;
-	height: number;
-	settings: Settings;
-	runtime: {
-		cycle: number;
-		fps: number;
-	};
-}
-
-export interface Cursor {
-	x: number;
-	y: number;
-	pressed: boolean;
-	p: {
-		x: number;
-		y: number;
-		pressed: boolean;
-	};
-}
 
 interface State {
-	time: number;
-	frame: number;
-	cycle: number;
+    time: number;
+    frame: number;
+    cycle: number;
 }
 
 export interface Program {
-	settings?: Partial<Settings>;
-	boot?(context: Context, buffer: Cell[], userData: any): void;
-	pre?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
-	main?(
-		cell: { x: number; y: number; index: number },
-		context: Context,
-		cursor: Cursor,
-		buffer: Cell[],
-		userData: any
-	): string | number | Partial<Cell> | null | undefined;
-	post?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
-	pointerMove?(context: Context, cursor: Cursor, buffer: Cell[]): void;
-	pointerDown?(context: Context, cursor: Cursor, buffer: Cell[]): void;
-	pointerUp?(context: Context, cursor: Cursor, buffer: Cell[]): void;
-	[key: string]: any;
+    settings?: Partial<Settings>;
+    boot?(context: Context, buffer: Cell[], userData: any): void;
+    pre?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
+    main?(
+        cell: { x: number; y: number; index: number },
+        context: Context,
+        cursor: Cursor,
+        buffer: Cell[],
+        userData: any
+    ): string | number | Partial<Cell> | null | undefined;
+    post?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
+    pointerMove?(context: Context, cursor: Cursor, buffer: Cell[]): void;
+    pointerDown?(context: Context, cursor: Cursor, buffer: Cell[]): void;
+    pointerUp?(context: Context, cursor: Cursor, buffer: Cell[]): void;
+    [key: string]: any;
 }
 
 export interface Renderer {
-	preferredElementNodeName: string;
-	render(context: Context, buffer: Cell[], settings: Settings): void;
+    preferredElementNodeName: string;
+    render(context: Context, buffer: Cell[], settings: Settings): void;
 }
 
 const renderers: { [K in 'canvas' | 'text']: Renderer } = {
@@ -189,19 +132,19 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             settings.element = document.createElement(renderer.preferredElementNodeName) as HTMLElement;
             document.body.appendChild(settings.element);
         } else {
-			if (settings.renderer == 'canvas') {
-				if (settings.element.nodeName == 'CANVAS') {
-					renderer = renderers[settings.rendererType]
-				} else {
-					console.warn("This renderer expects a canvas target element.")
-				}
-			} else {
-				if (settings.element.nodeName != 'CANVAS') {
-					renderer = renderers[settings.rendererType]
-				} else {
-					console.warn("This renderer expects a text target element.")
-				}
-			}
+            if (settings.renderer == 'canvas') {
+                if (settings.element.nodeName == 'CANVAS') {
+                    renderer = renderers[settings.rendererType]
+                } else {
+                    console.warn("This renderer expects a canvas target element.")
+                }
+            } else {
+                if (settings.element.nodeName != 'CANVAS') {
+                    renderer = renderers[settings.rendererType]
+                } else {
+                    console.warn("This renderer expects a text target element.")
+                }
+            }
         }
 
         // Apply CSS settings to element
@@ -250,7 +193,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             if (!settings.element) return;
             const touchEvent = e as TouchEvent;
             const touch = touchEvent.touches[0];
-            if (!touch) return; 
+            if (!touch) return;
             const rect = settings.element.getBoundingClientRect();
             pointer.x = touch.clientX - rect.left;
             pointer.y = touch.clientY - rect.top;
