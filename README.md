@@ -1,53 +1,70 @@
 # ts-play-core
 
-Core files, example and demos of the live-code ASCII playground:  
-[play.ertdfgcvb.xyz](https://play.ertdfgcvb.xyz)
+This is a typescript rewrite of ertfgcvb's awesome JavaScript project play.core, check out the original project here: [play.ertdfgcvb.xyz](https://play.ertdfgcvb.xyz)
 
-Examples and demos:  
-[play.ertdfgcvb.xyz/abc.html#source:examples](https://play.ertdfgcvb.xyz/abc.html#source:examples)
+---
 
-Embedding examples:  
-[single](https://play.ertdfgcvb.xyz/tests/single.html)  
-[multi](https://play.ertdfgcvb.xyz/tests/multi.html)  
+**ts-play-core** allows users to write typescript code
+that builds ASCII art & animations similar to writing a GLSL fragment shader.
 
-Playground manual, API and resources:  
-[play.ertdfgcvb.xyz/abc.html](https://play.ertdfgcvb.xyz/abc.html)
-
-## Installation & usage
+## Installation & Usage
 
 To install this package:
 
 ```shell
-npm install https://github.com/ertdfgcvb/play.core
+npm install ts-play-core
 ```
 
 To import and run one of the examples:
 
-```javascript
-import { run } from "play.core/src/run.js";
-import * as program from "play.core/src/programs/demos/spiral.js";
+```typescript
+import { type Settings, run } from "ts-play-core";
+// for JS scripts
+// (right now all scripts in the program folder are JS)
+import * as donut from "ts-play-core/programs/demos/donut";
 
-const settings = {
-  fps: 60,
+const settings: Partial<Settings> = {
   element: document.querySelector("pre"),
 };
 
-run(program, settings).catch(function(e) {
-  console.warn(e.message);
-  console.log(e.error);
-});
+run(donut, settings)
+  .then(function (e) {
+    console.log(e);
+  })
+  .catch(function (e) {
+    console.warn(e.message);
+    console.log(e.error);
+  });
 ```
+# Simple Example
+This is the new and recommended way to write ts-play-core scripts.
+```typescript
+// Circle.ts
 
-## Building for `<script>` tags
+import type { Program } from "ts-play-core";
+import { length } from "ts-play-core/modules/vec2";
 
-If you want to build a minified JS module for inclusion in a site using a `<script>` tag, you can use the `build` script, included in the package:
+export default {
+    settings: {
+        backgroundColor: "black",
+    },
+    main(coord, context, cursor) {
+        const aspectRatio = cursor.pressed ? 1 : context.metrics.aspect
 
-```shell
-# Install this package (including build dependencies)
-npm install
+        // Transform coordinate space to (-1, 1)
+        // width corrected screen aspect (m) and cell aspect (aspectRatio)
+        const m = Math.min(context.cols * aspectRatio, context.rows)
+        const st = {
+            x: 2.0 * (coord.x - context.cols / 2) / m * aspectRatio, // apply aspect
+            y: 2.0 * (coord.y - context.rows / 2) / m
+        }
 
-# Run the build script
-npm run build
+        // Distance of each cell from the center (0, 0)
+        const l = length(st)
+
+        // 0.7 is the radius of the circle
+        return l < 0.7 ? 'X' : '.'
+    }
+} satisfies Program;
+
 ```
-
-This will create a `run.min.js` file which you can include in your site.

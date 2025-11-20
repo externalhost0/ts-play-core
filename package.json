@@ -25,6 +25,10 @@
     "./modules/*": {
       "types": "./dist/modules/*.d.ts",
       "import": "./dist/modules/*.js"
+    },
+    "./programs/*": {
+      "types": "./dist/programs/*.d.ts",
+      "import": "./dist/programs/*.js" 
     }
   },
   "files": [
