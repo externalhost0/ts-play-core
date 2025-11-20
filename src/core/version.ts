@@ -1,5 +1,5 @@
 /**
-@module   version.js
+@module   version.ts
 @desc     Runner version string
 @category core
 */
