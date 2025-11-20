@@ -1,14 +1,28 @@
 {
-  "name": "play.core",
+  "name": "play.core.ts",
   "version": "1.0.0",
-  "repository": "https://github.com/ertdfgcvb/play.core.git",
-  "author": "andreas@ertdfgcvb.xyz",
+  "repository": "https://github.com/externalhost0/play.core.ts",
+  "author": "externalhost",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "rollup": "^2.47.0",
-    "terser": "^5.7.0"
+    "terser": "^5.7.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
-    "build": "$(npm bin)/rollup -i src/run.js --format es --name play | $(npm bin)/terser --compress --mangle --toplevel --timings --ecma 2015 > run.min.js"
-  }
+    "buildEXT": "$(npm bin)/rollup -i src/run.js --format es --name play | $(npm bin)/terser --compress --mangle --toplevel --timings --ecma 2015 > run.min.js",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && npx tsc && npx rollup -i dist/run.js --format es --name play | npx terser --compress --mangle --toplevel --timings --ecma 2015 > dist/run.min.js",
+    "build:types": "npx tsc",
+    "build:bundle": "npx rollup -i dist/run.js --format es --name play | npx terser --compress --mangle --toplevel --timings --ecma 2015 > dist/run.min.js",
+    "test": "echo \"Error: no test has been made\" && exit 1"
+  },
+  "type": "module",
+  "main": "dist/run.js",
+  "types": "dist/run.d.ts",
+  "files": [
+    "dist/",
+    "README.md"
+  ]
 }
