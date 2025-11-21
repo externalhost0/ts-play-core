@@ -94,7 +94,7 @@ export interface Settings {
 /**
  * Context information about the current frame/state
  */
-export interface Context<TVariables = any> {
+export interface Context{
     /** Current frame number */
     frame: number;
     /** Elapsed time in milliseconds */
@@ -118,7 +118,6 @@ export interface Context<TVariables = any> {
         /** Actual frames per second */
         fps: number;
     };
-    variables: TVariables;
 }
 
 /**

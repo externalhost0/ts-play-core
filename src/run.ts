@@ -31,19 +31,18 @@ interface State {
     cycle: number;
 }
 
-export interface Program<TVariables = any> {
+export interface Program {
     settings?: Partial<Settings>;
-    userVariables?: TVariables,
-    boot?(context: Context, buffer: Cell[], userVars: TVariables): void;
-    pre?(context: Context, cursor: Cursor, buffer: Cell[], userVars: TVariables): void;
+    boot?(context: Context, buffer: Cell[], userData: any): void;
+    pre?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
     main?(
         coord: Coordinate,
         context: Context,
         cursor: Cursor,
         buffer: Cell[],
-        userVars: TVariables
+        userData: any 
     ): string | number | Partial<Cell> | null | undefined;
-    post?(context: Context, cursor: Cursor, buffer: Cell[], userVars: TVariables): void;
+    post?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
     pointerMove?(context: Context, cursor: Cursor, buffer: Cell[]): void;
     pointerDown?(context: Context, cursor: Cursor, buffer: Cell[]): void;
     pointerUp?(context: Context, cursor: Cursor, buffer: Cell[]): void;
@@ -90,14 +89,13 @@ const CSSStyles: (keyof CSSStyleDeclaration)[] = [
 // Finally, an optional userData object can be passed which will be available
 // as last parameter in all the module functions.
 // The program object should export at least a main(), pre() or post() function.
-export function run<TVariables = any>(program: Program<TVariables>, runSettings: Partial<Settings> = {}): Promise<Context<TVariables>> {
-    const variables = program.userVariables || {} as TVariables;
+export function run(program: Program, runSettings: Partial<Settings> = {}, userData: any = {}): Promise<Context> {
     // Everything is wrapped inside a promise;
     // in case of errors in 'program' it will reject without reaching the bottom.
     // If the program reaches the bottom of the first frame the promise is resolved.
     return new Promise(function (resolve) {
         // Merge of user- and default settings
-        const settings: Settings = { ...defaultSettings, ...runSettings, ...program.settings }
+        const settings: Settings = { ...defaultSettings, ...runSettings, ...program.settings };
         
 
         // State is stored in local storage and will loaded on program launch
@@ -108,7 +106,7 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
             time: 0, // The time in ms
             frame: 0, // The frame number (int)
             cycle: 0  // An cycle count for debugging purposes
-        }
+        };
 
         // Name of local storage key
         const LOCAL_STORAGE_KEY_STATE = 'currentState';
@@ -271,9 +269,9 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
         function boot() {
             if (!settings.element) return;
             metrics = calcMetrics(settings.element);
-            const context = getContext<TVariables>(state, settings, metrics, fps, variables);
+            const context = getContext(state, settings, metrics, fps);
             if (typeof program.boot == 'function') {
-                program.boot(context, buffer, variables);
+                program.boot(context, buffer, userData);
             }
             requestAnimationFrame(loop);
         }
@@ -290,26 +288,25 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
 
         // Main program loop
         function loop(t: number) {
-
             // Timing
             const delta = t - timeSample;
             if (delta < interval) {
                 // Skip the frame
-                if (!settings.once) requestAnimationFrame(loop)
-                return
+                if (!settings.once) requestAnimationFrame(loop);
+                return;
             }
 
             // Snapshot of context data
-            const context = getContext<TVariables>(state, settings, metrics, fps, variables)
+            const context = getContext(state, settings, metrics, fps);
 
             // FPS update
-            fps.update(t)
+            fps.update(t);
 
             // Timing update
-            timeSample = t - delta % interval // adjust timeSample
-            state.time = t + timeOffset       // increment time + initial offs
-            state.frame++                     // increment frame counter
-            storage.store(LOCAL_STORAGE_KEY_STATE, state) // store state
+            timeSample = t - delta % interval; // adjust timeSample
+            state.time = t + timeOffset;       // increment time + initial offs
+            state.frame++;                     // increment frame counter
+            storage.store(LOCAL_STORAGE_KEY_STATE, state); // store state
 
             // Cursor update
             const cursor: Cursor = {
@@ -326,45 +323,45 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
             }
 
             // Pointer: store previous state
-            pointer.px = pointer.x
-            pointer.py = pointer.y
-            pointer.ppressed = pointer.pressed
+            pointer.px = pointer.x;
+            pointer.py = pointer.y;
+            pointer.ppressed = pointer.pressed;
 
             // 1. --------------------------------------------------------------
             // In case of resize / init normalize the buffer
             if (cols != context.cols || rows != context.rows) {
-                cols = context.cols
-                rows = context.rows
-                buffer.length = context.cols * context.rows
+                cols = context.cols;
+                rows = context.rows;
+                buffer.length = context.cols * context.rows;
                 for (let i = 0; i < buffer.length; i++) {
-                    buffer[i] = { ...DEFAULT_CELL_STYLE, char: EMPTY_CELL }
+                    buffer[i] = { ...DEFAULT_CELL_STYLE, char: EMPTY_CELL };
                 }
             }
 
             // 2. --------------------------------------------------------------
             // Call pre(), if defined
             if (typeof program.pre == 'function') {
-                program.pre(context, cursor, buffer, variables)
+                program.pre(context, cursor, buffer, userData);
             }
 
             // 3. --------------------------------------------------------------
             // Call main(), if defined
             if (typeof program.main == 'function') {
                 for (let j = 0; j < context.rows; j++) {
-                    const offs = j * context.cols
+                    const offs = j * context.cols;
                     for (let i = 0; i < context.cols; i++) {
-                        const idx = i + offs
+                        const idx = i + offs;
                         // Override content:
                         // buffer[idx] = program.main({x:i, y:j, index:idx}, context, cursor, buffer, userData)
-                        const out = program.main({ x: i, y: j, index: idx }, context, cursor, buffer, variables)
+                        const out = program.main({ x: i, y: j, index: idx }, context, cursor, buffer, userData);
                         if (typeof out == 'object' && out !== null) {
-                            buffer[idx] = { ...buffer[idx], ...out }
+                            buffer[idx] = { ...buffer[idx], ...out };
                         } else {
-                            buffer[idx] = { ...buffer[idx], char: out as string | number }
+                            buffer[idx] = { ...buffer[idx], char: out as string | number };
                         }
                         // Fix undefined / null / etc.
                         if (!Boolean(buffer[idx].char) && buffer[idx].char !== 0) {
-                            buffer[idx].char = EMPTY_CELL
+                            buffer[idx].char = EMPTY_CELL;
                         }
                     }
                 }
@@ -373,11 +370,11 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
             // 4. --------------------------------------------------------------
             // Call post(), if defined
             if (typeof program.post == 'function') {
-                program.post(context, cursor, buffer, variables)
+                program.post(context, cursor, buffer, userData);
             }
 
             // 5. --------------------------------------------------------------
-            renderer.render(context, buffer, settings)
+            renderer.render(context, buffer, settings);
 
             // 6. --------------------------------------------------------------
             // Queued events
@@ -391,11 +388,11 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
 
             // 7. --------------------------------------------------------------
             // Loop (eventually)
-            if (!settings.once) requestAnimationFrame(loop)
+            if (!settings.once) requestAnimationFrame(loop);
 
             // The end of the first frame is reached without errors
             // the promise can be resolved.
-            resolve(context)
+            resolve(context);
         }
     })
 }
@@ -405,13 +402,13 @@ export function run<TVariables = any>(program: Program<TVariables>, runSettings:
 // Build / update the 'context' object (immutable)
 // A bit of spaghetti... but the context object needs to be ready for
 // the boot function and also to be updated at each frame.
-function getContext<TVariables = any>(state: State, settings: Settings, metrics: Metrics, fps: FPS, variables: TVariables): Context<TVariables> {
+function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS): Context {
     if (!settings.element) {
         throw new Error('Element is not defined');
     }
-    const rect = settings.element.getBoundingClientRect()
-    const cols = settings.cols || Math.floor(rect.width / metrics.cellWidth)
-    const rows = settings.rows || Math.floor(rect.height / metrics.lineHeight)
+    const rect = settings.element.getBoundingClientRect();
+    const cols = settings.cols || Math.floor(rect.width / metrics.cellWidth);
+    const rows = settings.rows || Math.floor(rect.height / metrics.lineHeight);
     return Object.freeze({
         frame: state.frame,
         time: state.time,
@@ -427,8 +424,7 @@ function getContext<TVariables = any>(state: State, settings: Settings, metrics:
             fps: fps.fps
             // updatedRowNum
         }),
-        variables
-    }) as Context<TVariables>;
+    });
 }
 
 // Disables selection for an HTML element
@@ -450,24 +446,24 @@ function enableSelect(el: HTMLElement): void {
 // Copies the content of an element to the clipboard
 export function copyContent(el: HTMLElement): void {
     // Store selection default
-    const selectionEnabled = el.dataset.selectionEnabled !== 'false'
+    const selectionEnabled = el.dataset.selectionEnabled !== 'false';
 
     // Enable selection if necessary
-    if (!selectionEnabled) enableSelect(el)
+    if (!selectionEnabled) enableSelect(el);
 
     // Copy the text block
-    const range = document.createRange()
-    range.selectNode(el)
-    const sel = window.getSelection()
+    const range = document.createRange();
+    range.selectNode(el);
+    const sel = window.getSelection();
     if (sel) {
-        sel.removeAllRanges()
-        sel.addRange(range)
-        document.execCommand('copy')
-        sel.removeAllRanges()
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('copy');
+        sel.removeAllRanges();
     }
 
     // Restore default, if necessary
-    if (!selectionEnabled) disableSelect(el)
+    if (!selectionEnabled) disableSelect(el);
 }
 
 // Calcs width (fract), height, aspect of a monospaced char
@@ -475,34 +471,34 @@ export function copyContent(el: HTMLElement): void {
 // Returns a mutable object.
 export function calcMetrics(el: HTMLElement): Metrics {
 
-    const style = getComputedStyle(el)
+    const style = getComputedStyle(el);
 
     // Extract info from the style: in case of a canvas element
     // the style and font family should be set anyways.
-    const fontFamily = style.getPropertyValue('font-family')
-    const fontSize = parseFloat(style.getPropertyValue('font-size'))
+    const fontFamily = style.getPropertyValue('font-family');
+    const fontSize = parseFloat(style.getPropertyValue('font-size'));
     // Can't rely on computed lineHeight since Safari 14.1
     // See:  https://bugs.webkit.org/show_bug.cgi?id=225695
-    const lineHeight = parseFloat(style.getPropertyValue('line-height'))
+    const lineHeight = parseFloat(style.getPropertyValue('line-height'));
     let cellWidth: number
 
     // If the output element is a canvas 'measureText()' is used
     // else cellWidth is computed 'by hand' (should be the same, in any case)
     if (el.nodeName == 'CANVAS') {
-        const canvas = el as HTMLCanvasElement
-        const ctx = canvas.getContext('2d')
+        const canvas = el as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d');
         if (ctx) {
-            ctx.font = fontSize + 'px ' + fontFamily
-            cellWidth = ctx.measureText(''.padEnd(50, 'X')).width / 50
+            ctx.font = fontSize + 'px ' + fontFamily;
+            cellWidth = ctx.measureText(''.padEnd(50, 'X')).width / 50;
         } else {
-            throw new Error('Could not get canvas context')
+            throw new Error('Could not get canvas context');
         }
     } else {
-        const span = document.createElement('span')
-        el.appendChild(span)
-        span.innerHTML = ''.padEnd(50, 'X')
-        cellWidth = span.getBoundingClientRect().width / 50
-        el.removeChild(span)
+        const span = document.createElement('span');
+        el.appendChild(span);
+        span.innerHTML = ''.padEnd(50, 'X');
+        cellWidth = span.getBoundingClientRect().width / 50;
+        el.removeChild(span);
     }
 
     const metrics: Metrics = {
@@ -516,11 +512,11 @@ export function calcMetrics(el: HTMLElement): Metrics {
         // responsive layouts with baseline or font change.
         // NOTE: It's not an immutable object anymore
         _update: function () {
-            const tmp = calcMetrics(el)
+            const tmp = calcMetrics(el);
             for (var k in tmp) {
                 // NOTE: Object.assign won't work
                 if (typeof tmp[k as keyof Metrics] == 'number' || typeof tmp[k as keyof Metrics] == 'string') {
-                    (metrics as any)[k] = tmp[k as keyof Metrics]
+                    (metrics as any)[k] = tmp[k as keyof Metrics];
                 }
             }
         }

@@ -2,7 +2,7 @@
   "name": "ts-play-core",
   "version": "1.0.6",
   "repository": "https://github.com/externalhost0/play.core.ts",
-  "author": "ertdfgcvb",
+  "author": "externalhost0",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^24.10.1",

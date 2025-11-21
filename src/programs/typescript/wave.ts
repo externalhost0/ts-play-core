@@ -13,17 +13,16 @@ interface WaveVariables {
 	speed: number,
 	color: string
 }
+export const waveState: WaveVariables = {
+	speed: 1,
+	color: 'red'
+}
 
 export default {
 	settings: {
 		fps: 60,
 	},
-	userVariables: {
-		speed: 10,
-		color: 'orange'
-	} as WaveVariables,
-
-	main(coord, context, cursor, buffer, userVars) {
+	main(coord, context, cursor, buffer) {
 		const t = context.time * 0.002;
 		const x = coord.x;
 		const y = coord.y;
@@ -41,7 +40,7 @@ export default {
 
 		return chars[i];
 	},
-} satisfies Program<WaveVariables>;
+} satisfies Program;
 
 function wave(t: number, y: number, seeds: number[], amps: number[]) {
 	return (

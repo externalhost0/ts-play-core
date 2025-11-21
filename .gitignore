@@ -2,9 +2,9 @@
 .DS_Store
 .AppleDouble
 .LSOverride
+.vscode/
 
 # in case
 node_modules/
-.vscode/
 dist/
 tsconfig.json
