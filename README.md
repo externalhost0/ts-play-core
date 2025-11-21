@@ -16,14 +16,16 @@ npm install ts-play-core
 ```
 
 To import and run one of the examples:
+> Examples from the original project are left in for now and can 
+be imported as seen below, however they should not be used
+in practice and serve as inspiration instead.
 
 ```typescript
 import { type Settings, run } from "ts-play-core";
-// for JS scripts
-// (right now all scripts in the program folder are JS)
+// for old JS scripts
 import * as donut from "ts-play-core/programs/demos/donut";
-// for TS scripts like in the example section
-import donut from "/wherever/its/located";
+// for new TS scripts
+import donut from "ts-play-core/programs/typescript/donut";
 
 const settings: Partial<Settings> = {
   element: document.querySelector("pre"),
@@ -41,7 +43,7 @@ run(donut, settings)
 ## Simple Example
 This is the new and recommended way to write ts-play-core scripts.
 ```typescript
-// Circle.ts
+// circle.ts
 
 import type { Program } from "ts-play-core";
 import { length } from "ts-play-core/modules/vec2";

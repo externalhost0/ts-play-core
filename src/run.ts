@@ -12,13 +12,10 @@ import RUNNER_VERSION from './core/version'
 export { RUNNER_VERSION };
 
 // import types for internal use
-import type { Context, Cursor, Settings, Cell, Metrics } from './types';
+import type { Coordinate, Context, Cursor, Settings, Cell, Metrics } from './types';
 // re-export types for users
 export type {
-    MainFunction,
-    PreFunction,
-    PostFunction,
-    Coord,
+    Coordinate,
     Context,
     Cursor,
     Buffer,
@@ -34,22 +31,23 @@ interface State {
     cycle: number;
 }
 
-export interface Program {
+export interface Program<TVariables = any> {
     settings?: Partial<Settings>;
-    boot?(context: Context, buffer: Cell[], userData: any): void;
-    pre?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
+    userVariables?: TVariables,
+    boot?(context: Context, buffer: Cell[], userVars: TVariables): void;
+    pre?(context: Context, cursor: Cursor, buffer: Cell[], userVars: TVariables): void;
     main?(
-        cell: { x: number; y: number; index: number },
+        coord: Coordinate,
         context: Context,
         cursor: Cursor,
         buffer: Cell[],
-        userData: any
+        userVars: TVariables
     ): string | number | Partial<Cell> | null | undefined;
-    post?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
+    post?(context: Context, cursor: Cursor, buffer: Cell[], userVars: TVariables): void;
     pointerMove?(context: Context, cursor: Cursor, buffer: Cell[]): void;
     pointerDown?(context: Context, cursor: Cursor, buffer: Cell[]): void;
     pointerUp?(context: Context, cursor: Cursor, buffer: Cell[]): void;
-    [key: string]: any;
+    // [key: string]: any;
 }
 
 export interface Renderer {
@@ -86,14 +84,14 @@ const CSSStyles: (keyof CSSStyleDeclaration)[] = [
     'textAlign'
 ]
 
-
 // Program runner.
 // Takes a program object (usually an imported module),
 // and some optional settings (see above) as arguments.
 // Finally, an optional userData object can be passed which will be available
 // as last parameter in all the module functions.
 // The program object should export at least a main(), pre() or post() function.
-export function run(program: Program, runSettings: Partial<Settings> = {}, userData: any = {}): Promise<Context> {
+export function run(program: Program, runSettings: Partial<Settings> = {}): Promise<Context> {
+    const variables = program.userVariables || {};
     // Everything is wrapped inside a promise;
     // in case of errors in 'program' it will reject without reaching the bottom.
     // If the program reaches the bottom of the first frame the promise is resolved.
@@ -112,11 +110,11 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
         }
 
         // Name of local storage key
-        const LOCAL_STORAGE_KEY_STATE = 'currentState'
+        const LOCAL_STORAGE_KEY_STATE = 'currentState';
 
         if (settings.restoreState) {
-            storage.restore(LOCAL_STORAGE_KEY_STATE, state)
-            state.cycle++ // Keep track of the cycle count for debugging purposes
+            storage.restore(LOCAL_STORAGE_KEY_STATE, state);
+            state.cycle++; // Keep track of the cycle count for debugging purposes
         }
 
         // If element is not provided create a default element based
@@ -132,28 +130,29 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             settings.element = document.createElement(renderer.preferredElementNodeName) as HTMLElement;
             document.body.appendChild(settings.element);
         } else {
-            if (settings.renderer == 'canvas') {
+            if (settings.rendererType == 'canvas') {
                 if (settings.element.nodeName == 'CANVAS') {
-                    renderer = renderers[settings.rendererType]
+                    renderer = renderers[settings.rendererType];
                 } else {
-                    console.warn("This renderer expects a canvas target element.")
+                    console.warn("This renderer expects a canvas target element.");
                 }
             } else {
                 if (settings.element.nodeName != 'CANVAS') {
-                    renderer = renderers[settings.rendererType]
+                    renderer = renderers[settings.rendererType];
                 } else {
-                    console.warn("This renderer expects a text target element.")
+                    console.warn("This renderer expects a text target element.");
                 }
             }
         }
 
+        // FIXME
         // Apply CSS settings to element
-        for (const s of CSSStyles) {
-            const key = s as keyof Settings;
-            if (settings[key] != null) {
-                settings.element.style[s as any] = settings[key];
-            }
-        }
+        // for (const s of CSSStyles) {
+        //     const key = s as keyof Settings;
+        //     if (settings[key] != null) {
+        //         settings.element.style[s as key] = settings[key];
+        //     }
+        // }
 
         // Eventqueue
         // Stores events and pops them at the end of the renderloop
@@ -174,19 +173,19 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             if (!settings.element) return;
             const pointerEvent = e as PointerEvent;
             const rect = settings.element.getBoundingClientRect()
-            pointer.x = pointerEvent.clientX - rect.left
-            pointer.y = pointerEvent.clientY - rect.top
-            eventQueue.push('pointerMove')
+            pointer.x = pointerEvent.clientX - rect.left;
+            pointer.y = pointerEvent.clientY - rect.top;
+            eventQueue.push('pointerMove');
         });
 
         settings.element.addEventListener('pointerdown', (e: Event) => {
-            pointer.pressed = true
-            eventQueue.push('pointerDown')
+            pointer.pressed = true;
+            eventQueue.push('pointerDown');
         });
 
         settings.element.addEventListener('pointerup', (e: Event) => {
-            pointer.pressed = false
-            eventQueue.push('pointerUp')
+            pointer.pressed = false;
+            eventQueue.push('pointerUp');
         });
 
         const touchHandler = (e: Event) => {
@@ -229,26 +228,26 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
         // Submitted: https://bugs.webkit.org/show_bug.cgi?id=217047
         document.fonts.ready.then((e) => {
             // Run this three times...
-            let count = 3
+            let count: number = 3;
                 ; (function __run_thrice__() {
                     if (--count > 0) {
-                        requestAnimationFrame(__run_thrice__)
+                        requestAnimationFrame(__run_thrice__);
                     } else {
                         // settings.element.style.lineHeight = Math.ceil(metrics.lineHeightf) + 'px'
                         // console.log(`Using font faimily: ${ci.fontFamily} @ ${ci.fontSize}/${ci.lineHeight}`)
                         // console.log(`Metrics: cellWidth: ${metrics.cellWidth}, lineHeightf: ${metrics.lineHeightf}`)
                         // Finally Boot!
-                        boot()
+                        boot();
                     }
                 })()
             // Ideal mode:
             // metrics = calcMetrics(settings.element)
             // etc.
             // requestAnimationFrame(loop)
-        })
+        });
 
         // FPS object (keeps some state for precise FPS measure)
-        const fps = new FPS()
+        const fps = new FPS();
 
         // A cell with no value at all is just a space
         const EMPTY_CELL = ' ';
@@ -263,36 +262,36 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
 
         // Buffer needed for the final DOM rendering,
         // each array entry represents a cell.
-        const buffer: Cell[] = []
+        const buffer: Cell[] = [];
 
         // Metrics object, calc once (below)
-        let metrics: Metrics
+        let metrics: Metrics;
 
         function boot() {
             if (!settings.element) return;
-            metrics = calcMetrics(settings.element)
-            const context = getContext(state, settings, metrics, fps)
+            metrics = calcMetrics(settings.element);
+            const context = getContext(state, settings, metrics, fps);
             if (typeof program.boot == 'function') {
-                program.boot(context, buffer, userData)
+                program.boot(context, buffer, variables);
             }
-            requestAnimationFrame(loop)
+            requestAnimationFrame(loop);
         }
 
         // Time sample to calculate precise offset
-        let timeSample = 0
+        let timeSample: number = 0;
         // Previous time step to increment state.time (with state.time initial offset)
-        let ptime = 0
-        const interval = 1000 / settings.fps
-        const timeOffset = state.time
+        let ptime = 0;
+        const interval = 1000 / settings.fps;
+        const timeOffset = state.time;
 
         // Used to track window resize
-        let cols: number, rows: number
+        let cols: number, rows: number;
 
         // Main program loop
         function loop(t: number) {
 
             // Timing
-            const delta = t - timeSample
+            const delta = t - timeSample;
             if (delta < interval) {
                 // Skip the frame
                 if (!settings.once) requestAnimationFrame(loop)
@@ -344,7 +343,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             // 2. --------------------------------------------------------------
             // Call pre(), if defined
             if (typeof program.pre == 'function') {
-                program.pre(context, cursor, buffer, userData)
+                program.pre(context, cursor, buffer, variables)
             }
 
             // 3. --------------------------------------------------------------
@@ -356,7 +355,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
                         const idx = i + offs
                         // Override content:
                         // buffer[idx] = program.main({x:i, y:j, index:idx}, context, cursor, buffer, userData)
-                        const out = program.main({ x: i, y: j, index: idx }, context, cursor, buffer, userData)
+                        const out = program.main({ x: i, y: j, index: idx }, context, cursor, buffer, variables)
                         if (typeof out == 'object' && out !== null) {
                             buffer[idx] = { ...buffer[idx], ...out }
                         } else {
@@ -373,7 +372,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             // 4. --------------------------------------------------------------
             // Call post(), if defined
             if (typeof program.post == 'function') {
-                program.post(context, cursor, buffer, userData)
+                program.post(context, cursor, buffer, variables)
             }
 
             // 5. --------------------------------------------------------------
@@ -381,12 +380,13 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
 
             // 6. --------------------------------------------------------------
             // Queued events
-            while (eventQueue.length > 0) {
-                const type = eventQueue.shift()
-                if (type && typeof program[type] == 'function') {
-                    program[type](context, cursor, buffer)
-                }
-            }
+            // FIXME
+            // while (eventQueue.length > 0) {
+            //     const type = eventQueue.shift()
+            //     if (type && typeof program[type] == 'function') {
+            //         program[type](context, cursor, buffer)
+            //     }
+            // }
 
             // 7. --------------------------------------------------------------
             // Loop (eventually)

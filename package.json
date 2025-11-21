@@ -1,6 +1,6 @@
 {
   "name": "ts-play-core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "repository": "https://github.com/externalhost0/play.core.ts",
   "author": "ertdfgcvb",
   "license": "Apache-2.0",
@@ -9,7 +9,6 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "buildEXT": "$(npm bin)/rollup -i src/run.js --format es --name play | $(npm bin)/terser --compress --mangle --toplevel --timings --ecma 2015 > run.min.js",
     "clean": "rm -rf dist",
     "build": "npm run clean && npx tsc",
     "test": "echo \"Error: no test has been made\" && exit 1"
@@ -28,7 +27,7 @@
     },
     "./programs/*": {
       "types": "./dist/programs/*.d.ts",
-      "import": "./dist/programs/*.js" 
+      "import": "./dist/programs/*.js"
     }
   },
   "files": [
