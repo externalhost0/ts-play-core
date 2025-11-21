@@ -98,6 +98,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
     return new Promise(function (resolve) {
         // Merge of user- and default settings
         const settings: Settings = { ...defaultSettings, ...runSettings, ...program.settings }
+        
 
         // State is stored in local storage and will loaded on program launch
         // if settings.restoreState == true.
@@ -270,7 +271,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
         function boot() {
             if (!settings.element) return;
             metrics = calcMetrics(settings.element);
-            const context = getContext(state, settings, metrics, fps);
+            const context = getContext(state, settings, metrics, fps, variables);
             if (typeof program.boot == 'function') {
                 program.boot(context, buffer, variables);
             }
@@ -299,7 +300,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
             }
 
             // Snapshot of context data
-            const context = getContext(state, settings, metrics, fps)
+            const context = getContext(state, settings, metrics, fps, variables)
 
             // FPS update
             fps.update(t)
@@ -404,7 +405,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
 // Build / update the 'context' object (immutable)
 // A bit of spaghetti... but the context object needs to be ready for
 // the boot function and also to be updated at each frame.
-function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS): Context {
+function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS, variables: any): Context {
     if (!settings.element) {
         throw new Error('Element is not defined');
     }
@@ -425,7 +426,8 @@ function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS
             cycle: state.cycle,
             fps: fps.fps
             // updatedRowNum
-        })
+        }),
+        variables
     })
 }
 

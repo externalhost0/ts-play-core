@@ -118,6 +118,7 @@ export interface Context {
         /** Actual frames per second */
         fps: number;
     };
+    variables: any;
 }
 
 /**
