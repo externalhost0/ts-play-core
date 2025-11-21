@@ -90,8 +90,8 @@ const CSSStyles: (keyof CSSStyleDeclaration)[] = [
 // Finally, an optional userData object can be passed which will be available
 // as last parameter in all the module functions.
 // The program object should export at least a main(), pre() or post() function.
-export function run(program: Program, runSettings: Partial<Settings> = {}): Promise<Context> {
-    const variables = program.userVariables || {};
+export function run<TVariables = any>(program: Program<TVariables>, runSettings: Partial<Settings> = {}): Promise<Context<TVariables>> {
+    const variables = program.userVariables || {} as TVariables;
     // Everything is wrapped inside a promise;
     // in case of errors in 'program' it will reject without reaching the bottom.
     // If the program reaches the bottom of the first frame the promise is resolved.
@@ -271,7 +271,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
         function boot() {
             if (!settings.element) return;
             metrics = calcMetrics(settings.element);
-            const context = getContext(state, settings, metrics, fps, variables);
+            const context = getContext<TVariables>(state, settings, metrics, fps, variables);
             if (typeof program.boot == 'function') {
                 program.boot(context, buffer, variables);
             }
@@ -300,7 +300,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
             }
 
             // Snapshot of context data
-            const context = getContext(state, settings, metrics, fps, variables)
+            const context = getContext<TVariables>(state, settings, metrics, fps, variables)
 
             // FPS update
             fps.update(t)
@@ -405,7 +405,7 @@ export function run(program: Program, runSettings: Partial<Settings> = {}): Prom
 // Build / update the 'context' object (immutable)
 // A bit of spaghetti... but the context object needs to be ready for
 // the boot function and also to be updated at each frame.
-function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS, variables: any): Context {
+function getContext<TVariables = any>(state: State, settings: Settings, metrics: Metrics, fps: FPS, variables: TVariables): Context<TVariables> {
     if (!settings.element) {
         throw new Error('Element is not defined');
     }
@@ -428,7 +428,7 @@ function getContext(state: State, settings: Settings, metrics: Metrics, fps: FPS
             // updatedRowNum
         }),
         variables
-    })
+    }) as Context<TVariables>;
 }
 
 // Disables selection for an HTML element
