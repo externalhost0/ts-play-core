@@ -21,7 +21,8 @@
 
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true
 
     // Stricter Typechecking Options
     // "noUncheckedIndexedAccess": true,

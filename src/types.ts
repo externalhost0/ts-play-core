@@ -1,10 +1,10 @@
 /**
  * Coordinate information for the current cell
  */
-export interface Coord {
-  x: number;
-  y: number;
-  index: number;
+export interface Coordinate {
+    x: number,
+    y: number,
+    index: number
 }
 
 /**
@@ -65,6 +65,7 @@ export interface Settings {
     allowSelect: boolean;
     /** Restore previous state on init */
     restoreState: boolean;
+
     /** Default background color */
     backgroundColor?: string;
     /** Default text color */
@@ -81,12 +82,13 @@ export interface Settings {
     lineHeight?: string;
     /** Text alignment */
     textAlign?: string;
+
     /** Canvas size override */
     canvasSize?: CanvasSize;
     /** Canvas position offset */
     canvasOffset?: CanvasOffset;
-    /** Additional custom settings */
-    [key: string]: any;
+    // /** Additional custom settings */
+    // [key: string]: any;
 }
 
 /**
@@ -143,32 +145,3 @@ export interface Buffer {
     /** Get character at specific coordinate from previous frame */
     get: (x: number, y: number) => string;
 }
-
-/**
- * Main function signature that user scripts must implement
- * @returns A character or Cell to render at the current coordinate
- */
-export type MainFunction = (
-  coord: Coord,
-  context: Context,
-  cursor: Cursor,
-  buffer: Buffer
-) => string | Cell;
-
-/**
- * Optional pre-render hook called before each frame
- */
-export type PreFunction = (
-  context: Context,
-  cursor: Cursor,
-  buffer: Buffer
-) => void;
-
-/**
- * Optional post-render hook called after each frame
- */
-export type PostFunction = (
-  context: Context,
-  cursor: Cursor,
-  buffer: Buffer
-) => void;

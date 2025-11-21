@@ -9,7 +9,6 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "buildEXT": "$(npm bin)/rollup -i src/run.js --format es --name play | $(npm bin)/terser --compress --mangle --toplevel --timings --ecma 2015 > run.min.js",
     "clean": "rm -rf dist",
     "build": "npm run clean && npx tsc",
     "test": "echo \"Error: no test has been made\" && exit 1"
