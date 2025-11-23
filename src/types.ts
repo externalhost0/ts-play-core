@@ -60,7 +60,7 @@ export interface Settings {
     /** Target frames per second */
     fps: number;
     /** Rendering engine to use */
-    rendererType: 'canvas' | 'text';
+    rendererType: "Text" | "Canvas";
     /** Allow text selection in the output */
     allowSelect: boolean;
     /** Restore previous state on init */
@@ -87,6 +87,9 @@ export interface Settings {
     canvasSize?: CanvasSize;
     /** Canvas position offset */
     canvasOffset?: CanvasOffset;
+
+    /** Allow cursor tracking to persist globally */
+    cursorMode: "Standard" | "Global";
     // /** Additional custom settings */
     // [key: string]: any;
 }
@@ -130,12 +133,10 @@ export interface Cursor {
     y: number;
     /** Whether mouse/touch is currently pressed */
     pressed: boolean;
+    /** Whether cursor is currently in the bounds of the target element */
+    inBounds: boolean;
     /** Previous cursor state */
-    p: {
-        x: number;
-        y: number;
-        pressed: boolean;
-    };
+    previous: Cursor;
 }
 
 /**

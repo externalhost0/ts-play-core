@@ -21,7 +21,7 @@ export type {
     Buffer,
     Cell,
     Settings,
-    Metrics
+    Metrics,
 } from './types';
 
 
@@ -40,7 +40,7 @@ export interface Program {
         context: Context,
         cursor: Cursor,
         buffer: Cell[],
-        userData: any 
+        userData: any
     ): string | number | Partial<Cell> | null | undefined;
     post?(context: Context, cursor: Cursor, buffer: Cell[], userData: any): void;
     pointerMove?(context: Context, cursor: Cursor, buffer: Cell[]): void;
@@ -54,10 +54,6 @@ export interface Renderer {
     render(context: Context, buffer: Cell[], settings: Settings): void;
 }
 
-const renderers: { [K in 'canvas' | 'text']: Renderer } = {
-    'canvas': canvasRenderer,
-    'text': textRenderer
-};
 
 const defaultSettings: Settings = {
     element: null,    // target element for output
@@ -65,9 +61,10 @@ const defaultSettings: Settings = {
     rows: 0,       // number of columns, 0 is equivalent to 'auto'
     once: false,   // if set to true the renderer will run only once
     fps: 30,      // fps capping
-    rendererType: 'text',  // can be 'canvas', anything else falls back to 'text'
+    rendererType: "Text",  // can be 'canvas', anything else falls back to 'text'
     allowSelect: false,   // allows selection of the rendered element
     restoreState: false,   // will store the "state" object in local storage
+    cursorMode: "Standard"
     // ^ this is handy for live-coding situations
 }
 
@@ -96,7 +93,6 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
     return new Promise(function (resolve) {
         // Merge of user- and default settings
         const settings: Settings = { ...defaultSettings, ...runSettings, ...program.settings };
-        
 
         // State is stored in local storage and will loaded on program launch
         // if settings.restoreState == true.
@@ -123,24 +119,16 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
         // for any other type a text node (PRE or any othe text node)
         // is expected and the text renderer is used.
         // TODO: better / more generic renderer init
-        let renderer: Renderer;
+        let renderer: Renderer = settings.rendererType == "Canvas" ? canvasRenderer : textRenderer;
         if (!settings.element) {
-            renderer = renderers[settings.rendererType] || renderers['text'];
             settings.element = document.createElement(renderer.preferredElementNodeName) as HTMLElement;
             document.body.appendChild(settings.element);
         } else {
-            if (settings.rendererType == 'canvas') {
-                if (settings.element.nodeName == 'CANVAS') {
-                    renderer = renderers[settings.rendererType];
-                } else {
-                    console.warn("This renderer expects a canvas target element.");
-                }
-            } else {
-                if (settings.element.nodeName != 'CANVAS') {
-                    renderer = renderers[settings.rendererType];
-                } else {
-                    console.warn("This renderer expects a text target element.");
-                }
+            const isCanvas = settings.element.nodeName === 'CANVAS';
+            const expectsCanvas = settings.rendererType === "Canvas";
+
+            if (isCanvas !== expectsCanvas) {
+                throw new Error(`This renderer expects a ${expectsCanvas ? 'canvas' : 'text'} target element.`);
             }
         }
 
@@ -168,7 +156,9 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             ppressed: false,
         };
 
-        settings.element.addEventListener('pointermove', (e: Event) => {
+        const eventTarget = (settings.cursorMode == "Global") ? document : settings.element;
+
+        eventTarget.addEventListener('pointermove', (e: Event) => {
             if (!settings.element) return;
             const pointerEvent = e as PointerEvent;
             const rect = settings.element.getBoundingClientRect()
@@ -176,13 +166,11 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             pointer.y = pointerEvent.clientY - rect.top;
             eventQueue.push('pointerMove');
         });
-
-        settings.element.addEventListener('pointerdown', (e: Event) => {
+        eventTarget.addEventListener('pointerdown', (e: Event) => {
             pointer.pressed = true;
             eventQueue.push('pointerDown');
         });
-
-        settings.element.addEventListener('pointerup', (e: Event) => {
+        eventTarget.addEventListener('pointerup', (e: Event) => {
             pointer.pressed = false;
             eventQueue.push('pointerUp');
         });
@@ -198,9 +186,9 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             eventQueue.push('pointerMove');
         }
 
-        settings.element.addEventListener('touchmove', touchHandler);
-        settings.element.addEventListener('touchstart', touchHandler);
-        settings.element.addEventListener('touchend', touchHandler);
+        eventTarget.addEventListener('touchmove', touchHandler);
+        eventTarget.addEventListener('touchstart', touchHandler);
+        eventTarget.addEventListener('touchend', touchHandler);
 
 
         // CSS fix
@@ -228,17 +216,17 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
         document.fonts.ready.then((e) => {
             // Run this three times...
             let count: number = 3;
-                ; (function __run_thrice__() {
-                    if (--count > 0) {
-                        requestAnimationFrame(__run_thrice__);
-                    } else {
-                        // settings.element.style.lineHeight = Math.ceil(metrics.lineHeightf) + 'px'
-                        // console.log(`Using font faimily: ${ci.fontFamily} @ ${ci.fontSize}/${ci.lineHeight}`)
-                        // console.log(`Metrics: cellWidth: ${metrics.cellWidth}, lineHeightf: ${metrics.lineHeightf}`)
-                        // Finally Boot!
-                        boot();
-                    }
-                })()
+            ; (function __run_thrice__() {
+                if (--count > 0) {
+                    requestAnimationFrame(__run_thrice__);
+                } else {
+                    // settings.element.style.lineHeight = Math.ceil(metrics.lineHeightf) + 'px'
+                    // console.log(`Using font faimily: ${ci.fontFamily} @ ${ci.fontSize}/${ci.lineHeight}`)
+                    // console.log(`Metrics: cellWidth: ${metrics.cellWidth}, lineHeightf: ${metrics.lineHeightf}`)
+                    // Finally Boot!
+                    boot();
+                }
+            })()
             // Ideal mode:
             // metrics = calcMetrics(settings.element)
             // etc.
@@ -308,18 +296,31 @@ export function run(program: Program, runSettings: Partial<Settings> = {}, userD
             state.frame++;                     // increment frame counter
             storage.store(LOCAL_STORAGE_KEY_STATE, state); // store state
 
-            // Cursor update
+            // Cursor update & construction
+            // fixme
+            if (!settings.element) {
+                throw new Error("Please set an element in your settings before running!");
+            }
+
+            const rawX = pointer.x / metrics.cellWidth;
+            const rawY = pointer.y / metrics.lineHeight;
+            const inBounds = rawX >= 0 && rawX < context.cols && rawY >= 0 && rawY < context.rows;
+
+            const prevRawX = pointer.px / metrics.cellWidth;
+            const prevRawY = pointer.py / metrics.lineHeight;
+            const prevInBounds = prevRawX >= 0 && prevRawX < context.cols && prevRawY >= 0 && prevRawY < context.rows;
+
             const cursor: Cursor = {
-                // The canvas might be slightly larger than the number
-                // of cols/rows, min is required!
-                x: Math.min(context.cols - 1, pointer.x / metrics.cellWidth),
-                y: Math.min(context.rows - 1, pointer.y / metrics.lineHeight),
+                x: rawX,  // No clamping
+                y: rawY,  // No clamping
                 pressed: pointer.pressed,
-                p: { // state of previous frame
-                    x: pointer.px / metrics.cellWidth,
-                    y: pointer.py / metrics.lineHeight,
+                inBounds: inBounds,
+                previous: {
+                    x: prevRawX,
+                    y: prevRawY,
                     pressed: pointer.ppressed,
-                }
+                    inBounds: prevInBounds,
+                } as Cursor
             }
 
             // Pointer: store previous state
