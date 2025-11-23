@@ -7,6 +7,10 @@
 import { type Program } from "../../run";
 import { length } from "../../modules/vec2";
 
+export const circleState = {
+    radius: 0.7
+};
+
 export default {
     main(coord, context, cursor) {
         const aspectRatio = cursor.pressed ? 1 : context.metrics.aspect
@@ -23,6 +27,6 @@ export default {
         const l = length(st)
 
         // 0.7 is the radius of the circle
-        return l < 0.7 ? 'C' : '.'
+        return l < circleState.radius ? 'C' : '.'
     }
 } satisfies Program;

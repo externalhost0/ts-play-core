@@ -48,6 +48,11 @@ This is the new and recommended way to write ts-play-core scripts.
 import type { Program } from "ts-play-core";
 import { length } from "ts-play-core/modules/vec2";
 
+// you can export an object to change your code live!
+export const circleState = {
+    radius: 0.7
+};
+
 export default {
     settings: {
         backgroundColor: "black",
@@ -66,8 +71,8 @@ export default {
         // Distance of each cell from the center (0, 0)
         const l = length(st)
 
-        // 0.7 is the radius of the circle
-        return l < 0.7 ? 'X' : '.'
+        // 0.7 is the default radius of the circle
+        return l < circleState.radius ? 'X' : '.'
     }
 } satisfies Program;
 
