@@ -1,7 +1,7 @@
 {
   "name": "ts-play-core",
   "version": "1.0.6",
-  "repository": "https://github.com/externalhost0/play.core.ts",
+  "repository": "https://github.com/externalhost0/ts-play-core",
   "author": "externalhost0",
   "license": "Apache-2.0",
   "devDependencies": {
